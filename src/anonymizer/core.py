@@ -1,5 +1,4 @@
 import os
-import re
 import logging
 import subprocess
 from src.anonymizer.engine import RegexEngine, OpenAIEngine, AnonymizationResult
@@ -7,40 +6,6 @@ from src.logger import setup_logger
 
 setup_logger()
 LOG = logging.getLogger(__name__)
-
-
-class SectionExtractor:
-    DESC_PAT = re.compile(r"(^|\n)\s*(?:Описание|Описание исследования|Findings)\s*[:\-]?\s*\n", re.IGNORECASE)
-    CONCL_PAT = re.compile(r"(^|\n)\s*(?:Заключение|Вывод|Выводы|Impression|Conclusion)\s*[:\-]?\s*\n", re.IGNORECASE)
-
-    @classmethod
-    def extract(cls, text: str) -> tuple[str, dict[str, tuple[int, int]]]:
-        desc_m = cls.DESC_PAT.search(text)
-        concl_m = cls.CONCL_PAT.search(text)
-
-        sections: dict[str, tuple[int, int]] = {}
-
-        if desc_m:
-            desc_start = desc_m.end()
-            next_section = concl_m.start() if concl_m else len(text)
-            sections["DESCRIPTION"] = (desc_start, next_section)
-
-        if concl_m:
-            concl_start = concl_m.end()
-            sections["CONCLUSION"] = (concl_start, len(text))
-
-        if "DESCRIPTION" in sections and "CONCLUSION" in sections:
-            desc_block = text[sections["DESCRIPTION"][0]:sections["DESCRIPTION"][1]].strip()
-            concl_block = text[sections["CONCLUSION"][0]:sections["CONCLUSION"][1]].strip()
-            main = desc_block + "\n\n" + concl_block
-        elif "DESCRIPTION" in sections:
-            main = text[sections["DESCRIPTION"][0]:sections["DESCRIPTION"][1]].strip()
-        elif "CONCLUSION" in sections:
-            main = text[sections["CONCLUSION"][0]:sections["CONCLUSION"][1]].strip()
-        else:
-            main = text
-
-        return main, sections
 
 
 class Anonymizer:
@@ -101,12 +66,10 @@ class Anonymizer:
     # ---------- internals ----------
 
     def _process_text_and_write(self, text: str, out_txt_path: str, anonymize_before_write: bool) -> AnonymizationResult:
-        main, _sections = SectionExtractor.extract(text)
-
         if anonymize_before_write:
-            res = self.anonymize(main)
+            res = self.anonymize(text)
         else:
-            res = AnonymizationResult(text=main)
+            res = AnonymizationResult(text=text)
 
         self._write_txt(out_txt_path, res.text)
         return res
