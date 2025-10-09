@@ -14,7 +14,7 @@ def _normalize_steps(steps: Iterable[str]) -> list:
     return [s.strip().lower() for s in steps if s and str(s).strip()]
 
 
-@main(config_path="../configs", config_name="pipeline", version_base="1.3")
+@main(config_path="../configs", config_name="prepare_data", version_base="1.3")
 def run(cfg: DictConfig) -> None:
     merged: DictConfig = cfg
 
