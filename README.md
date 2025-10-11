@@ -43,7 +43,7 @@ python -m scripts.build_index jsonl=datasets/train_prompts.jsonl out_dir=artifac
 
 ### инференс (один запрос)
 ```bash
-OPENAI_API_KEY=... python -m scripts.rag_infer \
+python -m scripts.rag_infer \
   organ='головной мозг' \
   finding='МР-картина арахноидальной кисты правой височной доли' \
   json_output=true cot=true
@@ -64,7 +64,7 @@ OPENAI_API_KEY=... python -m scripts.rag_infer \
 
 Пример запуска:
 ```bash
-OPENAI_API_KEY=... python -m scripts.rag_infer \
+python -m scripts.rag_infer \
   input.file=datasets/train_prompts.jsonl \
   input.format=jsonl \
   input.columns.id=id \
@@ -76,7 +76,7 @@ OPENAI_API_KEY=... python -m scripts.rag_infer \
 
 ### оценка датасета (eval)
 ```bash
-OPENAI_API_KEY=... python -m scripts.rag_eval \
+python -m scripts.rag_eval \
   input_jsonl=datasets/train_prompts.jsonl \
   json_output=true cot=true
 ```
