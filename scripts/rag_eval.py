@@ -52,7 +52,7 @@ def run(cfg: DictConfig) -> None:
     retriever.load(index_dir)
 
     llm = OpenAICompatClient(LLMConfig(api_key=api_key, base_url=base_url, model=model, temperature=temperature, max_tokens=max_tokens))
-    rows = read_jsonl(input_jsonl)[:10]
+    rows = read_jsonl(input_jsonl)
 
     # Prepare CSV
     os.makedirs(osp.dirname(out_csv) or ".", exist_ok=True)
