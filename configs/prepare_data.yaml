@@ -37,4 +37,5 @@ sft_prep:
   outputs:
     train_jsonl: datasets/sft_train.jsonl
     eval_jsonl: datasets/sft_eval.jsonl
+    test_jsonl: datasets/sft_test_rag.jsonl
     hf_dir: datasets/sft_dataset

@@ -18,18 +18,30 @@ def find_processed_csvs(root: str) -> List[str]:
     return matches
 
 
+def _normalize_modality_from_folder(name: str) -> str:
+    n = (name or "").strip().lower()
+    if any(tok in n for tok in ["мр", "mrt", "mri", "mr_"]):
+        return "МРТ"
+    if any(tok in n for tok in ["кт", "ct", "kt_"]):
+        return "КТ"
+    return n.upper() or ""
+
+
 def read_rows_with_origin(path: str) -> Iterable[Dict[str, str]]:
-    origin_folder = osp.basename(osp.dirname(path))
+    organ_folder = osp.basename(osp.dirname(path))
+    modality_folder = osp.basename(osp.dirname(osp.dirname(path)))
+    modality = _normalize_modality_from_folder(modality_folder)
     with open(path, "r", newline="", encoding="utf-8") as f:
         reader = csv.DictReader(f)
         for row in reader:
             row = dict(row) if row is not None else {}
-            row["origin_folder"] = origin_folder
+            row["origin_folder"] = organ_folder
+            row["modality"] = modality
             yield row
 
 
 def collect_all_fieldnames(files: List[str]) -> List[str]:
-    fieldnames_set: Set[str] = set(["origin_folder"])  # ensure column order includes origin
+    fieldnames_set: Set[str] = set(["origin_folder", "modality"])  # ensure columns exist
     for path in files:
         with open(path, "r", newline="", encoding="utf-8") as f:
             reader = csv.DictReader(f)
@@ -38,8 +50,8 @@ def collect_all_fieldnames(files: List[str]) -> List[str]:
                     if name and name.strip():
                         fieldnames_set.add(name)
     # Prefer to place origin_folder first, then the rest in stable sorted order
-    other = sorted([n for n in fieldnames_set if n != "origin_folder"])
-    return ["origin_folder"] + other
+    other = sorted([n for n in fieldnames_set if n not in ("origin_folder", "modality")])
+    return ["origin_folder", "modality"] + other
 
 
 def write_combined_csv(files: List[str], output_csv: str) -> int:
