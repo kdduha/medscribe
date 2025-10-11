@@ -1,0 +1,6 @@
+jsonl: datasets/train_prompts.jsonl
+out_dir: artifacts/rag_index
+model: intfloat/e5-base-v2
+device: cuda
+normalize: true
+

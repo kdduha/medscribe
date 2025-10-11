@@ -1,0 +1,29 @@
+index_dir: artifacts/rag_index
+organ: "брюшная полость"
+finding: "Увеличенный желудок с неоднородным содержимым"
+reference: "Состояние после холецистэктомии от [DATE]. МР-признаки хронического панкреатита. МР-картина простых кист почек."
+top_k: 5
+cot: true
+json_output: true
+
+input:
+  file: ""  # path to CSV/JSONL with columns
+  format: auto  # csv|jsonl|auto
+  columns:
+    id: id
+    organ: organ
+    finding: finding
+    reference: result_text
+
+llm:
+  model: qwen3-14b-v1
+  api_key: dummy
+  base_url: http://localhost:8081/v1
+  temperature: 0.6
+  max_tokens: 512
+
+outputs:
+  csv: outputs/team_name_results.csv
+  logs: outputs/logs
+  metrics: outputs/metrics.json
+
