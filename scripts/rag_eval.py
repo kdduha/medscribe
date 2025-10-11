@@ -52,7 +52,7 @@ def run(cfg: DictConfig) -> None:
     retriever.load(index_dir)
 
     llm = OpenAICompatClient(LLMConfig(api_key=api_key, base_url=base_url, model=model, temperature=temperature, max_tokens=max_tokens))
-    rows = read_jsonl(input_jsonl)[:5]
+    rows = read_jsonl(input_jsonl)[:10]
 
     # Prepare CSV
     os.makedirs(osp.dirname(out_csv) or ".", exist_ok=True)
@@ -72,6 +72,7 @@ def run(cfg: DictConfig) -> None:
         acc_mod_vals = []
 
         for i, r in enumerate(rows):
+            modality = str(r.get("modality", ""))
             organ = str(r.get("organ", r.get("organ_abbr", "")))
             finding = str(r.get("finding", r.get("finding_text", "")))
             reference = str(r.get("result", r.get("result_text", "")))
@@ -97,7 +98,7 @@ def run(cfg: DictConfig) -> None:
                 pred_has_finding=parsed.has_finding,
                 true_organ=organ,
                 pred_organ=parsed.organ,
-                true_modality_hint=finding,
+                true_modality=modality,
                 pred_modality=parsed.modality,
             )
             acc_has_vals.append(cm["acc_has_finding"])
@@ -119,9 +120,21 @@ def run(cfg: DictConfig) -> None:
                 int(cm["acc_modality"] == 1.0),
             ])
 
+            
             LOG.info(
-                "Metrics[id=%s]: EM=%.3f BLEU=%.3f ROUGE=%.3f METEOR=%.3f Lev=%.3f | has=%s organ_ok=%s modality_ok=%s",
-                i,
+                "id: %s", i
+                )
+
+            LOG.info(
+                "GROUND TRUTH | Modality: %s, Organ: %s, Finding: %s", modality, organ, finding
+                )
+
+            LOG.info(
+                "PREDICTION | Modality: %s, Organ: %s, Finding: %s", parsed.modality, parsed.organ, parsed.result
+                )
+
+            LOG.info(
+                "Metrics| EM=%.3f BLEU=%.3f ROUGE=%.3f METEOR=%.3f Lev=%.3f has_finding=%s organ_ok=%s modality_ok=%s",
                 m.get("exact_match", None),
                 m.get("bleu", None),
                 m.get("rouge", None),

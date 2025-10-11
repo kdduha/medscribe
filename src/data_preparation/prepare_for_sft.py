@@ -50,7 +50,7 @@ def _build_messages_rows_with_index(rows: List[Dict]) -> Dict[str, Any]:
     return {"messages_rows": messages_rows, "source_rows": source_rows, "organ_by_idx": organ_by_idx}
 
 
-gdef _infer_modality(text: str, fallback: str = "") -> str:
+def _infer_modality(text: str, fallback: str = "") -> str:
     t = (text or "").lower()
     if "мр" in t or "мрт" in t or "mri" in t:
         return "МРТ"

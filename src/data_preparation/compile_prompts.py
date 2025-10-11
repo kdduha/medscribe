@@ -142,6 +142,7 @@ def run(cfg: Any) -> int:
 
     train_df = all_prompts[[
         "type",
+        "modality",
         "organ",
         "finding_text",
         "result_text",
