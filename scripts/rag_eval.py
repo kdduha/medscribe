@@ -109,6 +109,7 @@ def run(cfg: DictConfig) -> None:
         acc_mod_vals = []
 
         for i, r in enumerate(rows):
+            modality = str(r.get("modality", ""))
             organ = str(r.get("organ", r.get("organ_abbr", "")))
             finding = str(r.get("finding", r.get("finding_text", "")))
             reference = str(r.get("result", r.get("result_text", "")))
