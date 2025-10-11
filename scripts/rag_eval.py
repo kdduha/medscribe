@@ -191,7 +191,7 @@ def run(cfg: DictConfig) -> None:
 
     n = max(1, len(acc_vals))
     metrics = {
-        "accuracy": float(sum(acc_vals) / n),
+        "exact_match": float(sum(acc_vals) / n),
         "bleu": float(sum(bleu_vals) / n),
         "rougeL": float(sum(rouge_vals) / n),
         "meteor": float(sum(meteor_vals) / n),
