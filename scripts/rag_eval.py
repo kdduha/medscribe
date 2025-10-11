@@ -22,7 +22,7 @@ from src.rag.retriever import FaissRetriever
 from src.rag.prompt_builder import build_prompt, PromptConfig
 from src.rag.llm_client import OpenAICompatClient, LLMConfig
 from src.rag.postprocess import parse_llm_response
-from src.validation.metrics import compute_all_metrics, compute_classification_accuracy
+from src.validation.metrics import compute_all_metrics, compute_classification_accuracy, normalize_modality
 from src.logger import setup_logger
 
 
