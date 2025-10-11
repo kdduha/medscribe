@@ -1,0 +1,17 @@
+index_dir: artifacts/rag_index
+input_jsonl: datasets/sft_test_rag.jsonl
+top_k: 5
+cot: true
+json_output: true
+
+llm:
+  model: qwen3-14b-v1
+  api_key: dummy
+  base_url: http://localhost:8081/v1
+  temperature: 0.6
+  max_tokens: 512
+
+outputs:
+  csv: outputs/qwen_14b_results_v1.csv
+  metrics: outputs/qwen_14b_metrics_v1.json
+

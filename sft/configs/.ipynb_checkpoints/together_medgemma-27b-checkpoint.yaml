@@ -1,0 +1,46 @@
+api_key: ""  # or set TOGETHER_API_KEY env var
+
+model:
+  # Qwen3 or similar checkpoint name on Together/HF
+  name_or_path: google/gemma-3-27b-it
+  from_hf_model: google/medgemma-27b-it
+
+wandb:
+  enabled: true
+  api_key: 4c99f35d1a1b9e0dc3e63f5824d9d286c25d401f
+  project: medscribe-sft
+  name: sft-medgemma-27b-v2
+  # entity: your_team
+
+data:
+  # JSONL paths prepared in chat messages format
+  train_path: datasets/sft_train.jsonl
+  eval_path: datasets/sft_eval.jsonl
+
+training:
+  # Together hyperparameters (subset supported by API)
+  learning_rate: 1.0e-4
+  batch_size: 8
+  epochs: 1
+  lr_scheduler_type: cosine
+  warmup_ratio: 0.03
+  weight_decay: 0.05
+  gradient_accumulation_steps: 8
+  max_grad_norm: 0.7
+  n_evals: 1
+
+
+lora:
+  enabled: true
+  r: 32
+  alpha: 64
+  dropout: 0.1
+  # Recommended ML P targets for Qwen/LLaMA-style
+  target_modules: all-linear
+
+job:
+  n_evals: 1     # set >0 if eval file provided
+  wait: true     # wait for job completion in script
+  save_job_json: outputs/together_job.json
+
+

@@ -1,0 +1,41 @@
+steps: [download, compile, prompts]
+
+data:
+  drive_folder: ""  # Google Drive folder URL or ID; leave empty to skip
+  output_root: datasets/raw_data
+  resume: true
+  patterns: [processed_result.csv, processed_results.csv]
+
+compile:
+  input_root: ${data.output_root}
+  output_csv: datasets/raw_compiled.csv
+
+prompts:
+  input_file: ${compile.output_csv}
+  output_jsonl: datasets/train_prompts.jsonl
+  seed: 42
+  simple_frac: 0.2
+  medium_frac: 0.4
+  source_columns:
+    organ: origin_folder
+    finding: finding
+    result: result
+  organ_mapper:
+    бп: "брюшная полость"
+    ВНЧС: "височно-нижнечелюстной сустав"
+    гм: "головной мозг"
+    мж: "молочная железа"
+    мт: "малый таз"
+
+sft_prep:
+  enabled: true
+  source_jsonl: datasets/train_prompts.jsonl
+  split:
+    enabled: true
+    test_size: 0.1
+    seed: 42
+  outputs:
+    train_jsonl: datasets/sft_train.jsonl
+    eval_jsonl: datasets/sft_eval.jsonl
+    test_jsonl: datasets/sft_test_rag.jsonl
+    hf_dir: datasets/sft_dataset

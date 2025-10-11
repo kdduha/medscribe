@@ -1,0 +1,51 @@
+model:
+  name_or_path: Qwen/Qwen2.5-7B-Instruct  # set to your Qwen3 checkpoint
+  use_fast: true
+  trust_remote_code: true
+  padding_side: right
+
+data:
+  hf_dir: datasets/sft_dataset
+  # Or use raw JSONL files
+  # train_path: datasets/sft_train.jsonl
+  # eval_path: datasets/sft_eval.jsonl
+  input_field: prompt_text
+  target_field: result_text
+  template: "{prompt}\n\n{response}"
+
+training:
+  output_dir: outputs/sft
+  per_device_train_batch_size: 4
+  per_device_eval_batch_size: 4
+  gradient_accumulation_steps: 8  # effective batch ~32
+  learning_rate: 1.0e-4
+  weight_decay: 0.1
+  lr_scheduler_type: cosine
+  warmup_ratio: 0.03
+  num_train_epochs: 3
+  logging_steps: 10
+  save_strategy: steps
+  save_steps: 100
+  save_total_limit: 2
+  evaluation_strategy: "steps"  # set to "no" if no eval split
+  fp16: false
+  bf16: true
+  gradient_checkpointing: true
+  seed: 42
+  remove_unused_columns: false
+  report_to: none  # set "wandb" if wandb.enabled=true
+
+lora:
+  enabled: true
+  r: 64
+  alpha: 128
+  dropout: 0.1
+  # Recommended: MLP-only per findings; add attention if VRAM allows
+  target_modules: [gate_proj, up_proj, down_proj]
+  # Alternative (broader capacity): uncomment to include attention projections
+  # target_modules: [gate_proj, up_proj, down_proj, q_proj, k_proj, v_proj, o_proj]
+
+wandb:
+  enabled: false
+  project: medscribe-sft
+  # entity: your_team
