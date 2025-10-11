@@ -13,7 +13,7 @@ from src.rag.retriever import FaissRetriever
 from src.rag.prompt_builder import build_prompt, PromptConfig
 from src.rag.llm_client import OpenAICompatClient, LLMConfig
 from src.rag.postprocess import parse_llm_response
-from src.validation.metrics import compute_all_metrics, compute_classification_accuracy
+from src.validation.metrics import compute_all_metrics, compute_classification_accuracy, normalize_modality
 from src.logger import setup_logger
 
 
@@ -60,7 +60,7 @@ def run(cfg: DictConfig) -> None:
     with open(out_csv, "a", encoding="utf-8", newline="") as f:
         writer = csv.writer(f)
         if write_header:
-            writer.writerow(["id", "organ", "finding", "predicted_result", "is_exact_match", "bleu", "rouge", "meteor", "levenshtein", "acc_has_finding", "acc_organ", "acc_modality"])
+            writer.writerow(["id", "finding", "gt_modality", "gt_organ", "gt_result", "pred_modality", "pred_organ", "pred_result", "exact_match", "bleu", "rouge", "meteor", "levenshtein", "acc_has_finding", "acc_organ", "acc_modality"])
 
         acc_vals = []
         bleu_vals = []
@@ -76,6 +76,7 @@ def run(cfg: DictConfig) -> None:
             organ = str(r.get("organ", r.get("organ_abbr", "")))
             finding = str(r.get("finding", r.get("finding_text", "")))
             reference = str(r.get("result", r.get("result_text", "")))
+            gt_modality = str(r.get("modality", "")) or normalize_modality(finding)
             if not finding:
                 continue
 
@@ -107,8 +108,12 @@ def run(cfg: DictConfig) -> None:
 
             writer.writerow([
                 i,
-                organ,
                 finding,
+                gt_modality,
+                organ,
+                reference,
+                (parsed.modality or ""),
+                (parsed.organ or ""),
                 predicted,
                 int(m["exact_match"] == 1.0),
                 f"{m['bleu']:.4f}",
@@ -119,22 +124,16 @@ def run(cfg: DictConfig) -> None:
                 int(cm["acc_organ"] == 1.0),
                 int(cm["acc_modality"] == 1.0),
             ])
-
             
             LOG.info(
-                "id: %s", i
-                )
-
-            LOG.info(
-                "GROUND TRUTH | Modality: %s, Organ: %s, Finding: %s", modality, organ, finding
-                )
-
-            LOG.info(
-                "PREDICTION | Modality: %s, Organ: %s, Finding: %s", parsed.modality, parsed.organ, parsed.result
-                )
-
-            LOG.info(
-                "Metrics| EM=%.3f BLEU=%.3f ROUGE=%.3f METEOR=%.3f Lev=%.3f has_finding=%s organ_ok=%s modality_ok=%s",
+                "\n--------------------------------"
+                "\n[id: %s]"
+                "\nFinding: %s"
+                "\nGROUND TRUTH | Modality: %s, Organ: %s, Result: %s"
+                "\nPREDICTION | Modality: %s, Organ: %s, Result: %s"
+                "\nMetrics| EM=%.3f BLEU=%.3f ROUGE=%.3f METEOR=%.3f Lev=%.3f has_finding=%s organ_ok=%s modality_ok=%s"
+                "\n--------------------------------",
+                i, finding, modality, organ, reference, parsed.modality, parsed.organ, parsed.result,
                 m.get("exact_match", None),
                 m.get("bleu", None),
                 m.get("rouge", None),
@@ -143,7 +142,19 @@ def run(cfg: DictConfig) -> None:
                 bool(cm.get("acc_has_finding", None) == 1.0),
                 bool(cm.get("acc_organ", None) == 1.0),
                 bool(cm.get("acc_modality", None) == 1.0),
-            )
+                )
+
+            # LOG.info(
+            #     "Metrics| EM=%.3f BLEU=%.3f ROUGE=%.3f METEOR=%.3f Lev=%.3f has_finding=%s organ_ok=%s modality_ok=%s",
+            #     m.get("exact_match", None),
+            #     m.get("bleu", None),
+            #     m.get("rouge", None),
+            #     m.get("meteor", None),
+            #     m.get("levenshtein", None),
+            #     bool(cm.get("acc_has_finding", None) == 1.0),
+            #     bool(cm.get("acc_organ", None) == 1.0),
+            #     bool(cm.get("acc_modality", None) == 1.0),
+            # )
 
     # aggregate
     n = max(1, len(acc_vals))

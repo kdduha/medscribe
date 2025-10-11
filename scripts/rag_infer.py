@@ -14,7 +14,7 @@ from src.rag.retriever import FaissRetriever
 from src.rag.prompt_builder import build_prompt, PromptConfig
 from src.rag.llm_client import OpenAICompatClient, LLMConfig
 from src.rag.postprocess import parse_llm_response
-from src.validation.metrics import compute_all_metrics, compute_classification_accuracy
+from src.validation.metrics import compute_all_metrics, compute_classification_accuracy, normalize_modality
 from src.logger import setup_logger
 
 
@@ -59,12 +59,19 @@ def _read_rows(path: str, fmt: str, columns: Dict[str, str]) -> list[dict[str, s
     col_organ = columns.get("organ", "organ")
     col_finding = columns.get("finding", "finding")
     col_ref = columns.get("reference", "result_text")
+    col_mod = columns.get("modality", "modality")
+    def _infer_modality(text: str) -> str:
+        return normalize_modality(text)
     for i, r in enumerate(rows):
+        mod_val = str(r.get(col_mod, ""))
+        if not mod_val:
+            mod_val = _infer_modality(str(r.get(col_finding, r.get("finding_text", ""))))
         out.append({
             "id": str(r.get(col_id, i)),
             "organ": str(r.get(col_organ, r.get("organ_abbr", ""))),
             "finding": str(r.get(col_finding, r.get("finding_text", ""))),
             "reference": str(r.get(col_ref, r.get("result", r.get("result_text", "")))),
+            "modality": mod_val,
         })
     return out
 
@@ -111,9 +118,9 @@ def run(cfg: DictConfig) -> None:
     f_csv = open(out_csv, "a", encoding="utf-8", newline="")
     writer = csv.writer(f_csv)
     if write_header:
-        writer.writerow(["id", "organ", "finding", "predicted_result", "is_exact_match", "bleu", "rouge", "meteor", "levenshtein"])
+        writer.writerow(["id", "finding", "gt_modality", "gt_organ", "gt_result", "pred_modality", "pred_organ", "pred_result"])
 
-    def infer_one(row_id: str, org: str, fnd: str, ref: str) -> Dict[str, Any]:
+    def infer_one(row_id: str, org: str, fnd: str, ref: str, gt_mod: str) -> Dict[str, Any]:
         LOG.info("Infer id=%s", row_id)
         LOG.info("Input: organ=%s", org)
         LOG.info("Input finding:\n%s", fnd)
@@ -155,14 +162,13 @@ def run(cfg: DictConfig) -> None:
 
         writer.writerow([
             row_id,
-            org,
             fnd,
+            gt_mod,
+            org,
+            ref,
+            (parsed.modality or ""),
+            (parsed.organ or ""),
             predicted_local,
-            int(metrics["exact_match"] == 1.0),
-            f"{metrics['bleu']:.4f}",
-            f"{metrics['rouge']:.4f}",
-            f"{metrics['meteor']:.4f}",
-            f"{metrics['levenshtein']:.4f}",
         ])
 
         return {
@@ -188,7 +194,8 @@ def run(cfg: DictConfig) -> None:
             ref = str(r.get("reference", ""))
             if not fnd:
                 continue
-            out = infer_one(rid, org or organ, fnd, ref)
+            gt_mod = str(r.get("modality", "")) or normalize_modality(fnd)
+            out = infer_one(rid, org or organ, fnd, ref, gt_mod)
             now = datetime.utcnow().strftime("%Y%m%dT%H%M%SZ")
             log_obj = {
                 "timestamp": now,
@@ -198,7 +205,8 @@ def run(cfg: DictConfig) -> None:
             _ensure_dir(logs_dir)
             _write_json(osp.join(logs_dir, f"log_{now}_{rid}.json"), log_obj)
     else:
-        out = infer_one("single", organ, finding, reference)
+        gt_mod = normalize_modality(finding)
+        out = infer_one("single", organ, finding, reference, gt_mod)
         now = datetime.utcnow().strftime("%Y%m%dT%H%M%SZ")
         log_obj = {
             "timestamp": now,
