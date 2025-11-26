@@ -6,7 +6,6 @@ from dotenv import load_dotenv
 from src.anonymizer.core import Anonymizer
 from src.anonymizer.engine import AnonymizationResult
 
-SUPPORTED_EXTENSIONS = [".txt", ".pdf", ".docx", ".rtf"]
 load_dotenv()
 
 
@@ -16,6 +15,8 @@ def process_file(an: Anonymizer, in_path: Path, out_path: Path) -> Anonymization
         return an.process_txt(str(in_path), str(out_path))
     elif ext == ".pdf":
         return an.process_pdf(str(in_path), str(out_path))
+    elif ext == ".doc":
+        return an.process_doc(str(in_path), str(out_path))
     elif ext == ".docx":
         return an.process_docx(str(in_path), str(out_path))
     elif ext == ".rtf":
@@ -36,23 +37,27 @@ if __name__ == "__main__":
 
     an = Anonymizer()
     results = []
+    fails = []
 
     for root, _, files in os.walk(input_dir):
         root_path = Path(root)
         for f in files:
             path = root_path / f
-            if path.suffix.lower() in SUPPORTED_EXTENSIONS:
-                rel_path = path.relative_to(input_dir)
-                out_path = output_dir / rel_path.with_suffix(".txt")
+            rel_path = path.relative_to(input_dir)
+            out_path = output_dir / rel_path.with_suffix(".txt")
 
-                print(f"[INFO] Processing {path} -> {out_path}")
-                time.sleep(0.5)
+            print(f"[INFO] Processing {path} -> {out_path}")
+            time.sleep(0.2)
+
+            try:
                 res = process_file(an, path, out_path)
                 results.append(res)
+            except Exception as exc:
+                print(f"[ERROR] {exc}")
+                fails.append((path, exc))
 
     summary = an.generate_summary_report(results)
-    summary_path = output_dir / "anonymization_summary.txt"
-    with open(summary_path, "w", encoding="utf-8") as f:
+    with open(output_dir / "anonymization_summary.txt", "w", encoding="utf-8") as f:
         f.write("Anonymization summary:\n")
         f.write(f"Files processed: {summary['files_processed']}\n")
         f.write(f"Total replacements: {summary['total_replacements']}\n")
@@ -60,4 +65,9 @@ if __name__ == "__main__":
         for label, count in summary["counts"].items():
             f.write(f"  {label}: {count}\n")
 
-    print(f"\n[INFO] Done. Summary saved to {summary_path}")
+    with open(output_dir / "fails_summary.txt", "w", encoding="utf-8") as f:
+        f.write(f"Total failed files: {len(fails)}")
+        for path, exc in fails:
+            f.write(f"- {path} | {exc}")
+
+    print(f"\n[INFO] Done. Summary saved")
