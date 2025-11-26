@@ -22,7 +22,7 @@ from src.rag.retriever import FaissRetriever
 from src.rag.prompt_builder import build_prompt, PromptConfig
 from src.rag.llm_client import OpenAICompatClient, LLMConfig
 from src.rag.postprocess import parse_llm_response
-from src.validation.metrics import compute_all_metrics, compute_classification_accuracy, normalize_modality
+from src.validation.metrics import compute_all_metrics, compute_classification_accuracy
 from src.logger import setup_logger
 
 
@@ -109,7 +109,6 @@ def run(cfg: DictConfig) -> None:
         acc_mod_vals = []
 
         for i, r in enumerate(rows):
-            modality = str(r.get("modality", ""))
             organ = str(r.get("organ", r.get("organ_abbr", "")))
             finding = str(r.get("finding", r.get("finding_text", "")))
             reference = str(r.get("result", r.get("result_text", "")))
@@ -191,7 +190,7 @@ def run(cfg: DictConfig) -> None:
 
     n = max(1, len(acc_vals))
     metrics = {
-        "exact_match": float(sum(acc_vals) / n),
+        "accuracy": float(sum(acc_vals) / n),
         "bleu": float(sum(bleu_vals) / n),
         "rougeL": float(sum(rouge_vals) / n),
         "meteor": float(sum(meteor_vals) / n),
