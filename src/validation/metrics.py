@@ -5,7 +5,7 @@ import re
 import numpy as np
 from rouge_score import rouge_scorer
 from sacrebleu.metrics import BLEU
-from rapidfuzz.distance import Levenshtein
+# from rapidfuzz.distance import Levenshtein
 try:
     from nltk.translate.meteor_score import meteor_score  # type: ignore
     _HAS_NLTK_METEOR = True
@@ -108,13 +108,13 @@ def compute_all_metrics(reference: str, prediction: str) -> Dict[str, float]:
         "bleu": compute_bleu(refs, preds),
         "rouge": compute_rouge_l(refs, preds),
         "meteor": compute_meteor(refs, preds),
-        "levenshtein": compute_levenshtein(refs, preds),
+        # "levenshtein": compute_levenshtein(refs, preds),
         "exact_match": compute_exact_match(refs, preds),
     }
 
 
 def normalize_modality(text: str) -> str:
-    t = (text or "").strip().lower()
+    t = (text).strip().lower()
     if "мр" in t or "mri" in t or "мрт" in t:
         return "МРТ"
     if "кт" in t or "ct" in t:
@@ -124,13 +124,13 @@ def normalize_modality(text: str) -> str:
 
 def compute_classification_accuracy(true_has_finding: bool, pred_has_finding: Optional[bool],
                                     true_organ: str, pred_organ: Optional[str],
-                                    true_modality: str, pred_modality: Optional[str]) -> Dict[str, float]:
-    
-    acc_has = 1.0 if pred_has_finding is not None and bool(pred_has_finding) == bool(true_has_finding) else 0.0
-    acc_org = 1.0 if (pred_organ or "").strip().lower() == (true_organ or "").strip().lower() and pred_organ is not None else 0.0
+                                    true_modality: str, pred_modality: Optional[str]) -> Dict[str, int]:
+
+    acc_has = 1 if pred_has_finding is not None and bool(pred_has_finding) == bool(true_has_finding) else 0
+    acc_org = 1 if (pred_organ).strip().lower() == (true_organ).strip().lower() else 0
     true_mod = normalize_modality(true_modality)
-    pred_mod = normalize_modality(pred_modality or "") if pred_modality else ""
-    acc_mod = 1.0 if pred_mod and true_mod and pred_mod == true_mod else 0.0
+    pred_mod = normalize_modality(pred_modality)
+    acc_mod = 1 if pred_mod and true_mod and pred_mod == true_mod else 0
     return {
         "acc_has_finding": acc_has,
         "acc_organ": acc_org,

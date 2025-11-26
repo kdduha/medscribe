@@ -1,4 +1,5 @@
 import os
+import json
 from dataclasses import dataclass
 from typing import Optional, Dict, Any, List
 
@@ -35,6 +36,55 @@ class OpenAICompatClient:
             temperature=self.cfg.temperature,
             max_tokens=self.cfg.max_tokens,
         )
-        return resp.choices[0].message.content or ""
+        return resp.choices[0].message
 
+    def chat_structured_response(self, prompt: str, system_prompt: Optional[str] = None):
+        """Request a structured JSON response conforming to the Response schema.
+
+        JSON schema:
+          {
+            "type": "object",
+            "properties": {
+              "result": {"type": "string"},
+              "has_finding": {"type": ["boolean", "null"]},
+              "organ": {"type": ["string", "null"]},
+              "modality": {"type": ["string", "null"]}
+            },
+            "required": ["result"],
+            "additionalProperties": false
+          }
+        """
+        messages: List[Dict[str, str]] = []
+        if system_prompt:
+            messages.append({"role": "system", "content": system_prompt})
+        messages.append({"role": "user", "content": prompt})
+
+        response_format: Dict[str, Any] = {
+            "type": "json_schema",
+            "json_schema": {
+                "name": "Response",
+                "schema": {
+                    "type": "object",
+                    "properties": {
+                        "result": {"type": "string"},
+                        "has_finding": {"type": ["boolean", "null"]},
+                        "organ": {"type": ["string", "null"]},
+                        "modality": {"type": ["string", "null"]}
+                    },
+                    "required": ["result"],
+                    "additionalProperties": False
+                },
+                "strict": True,
+            },
+        }
+
+        resp = self.client.chat.completions.create(
+            model=self.cfg.model,
+            messages=messages,
+            temperature=self.cfg.temperature,
+            max_tokens=self.cfg.max_tokens,
+            response_format=response_format,
+        )
+
+        return resp.choices[0].message.content or ""
 

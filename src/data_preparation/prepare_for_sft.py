@@ -99,11 +99,26 @@ def run(cfg: Any) -> Dict[str, int]:
     out_train = to_absolute_path(str(cfg.outputs.get("train_jsonl", "datasets/sft_train.jsonl")))
     out_eval = to_absolute_path(str(cfg.outputs.get("eval_jsonl", "datasets/sft_eval.jsonl")))
     out_test = to_absolute_path(str(cfg.outputs.get("test_jsonl", "datasets/sft_test_rag.jsonl")))
+    out_train_rag = to_absolute_path(str(cfg.outputs.get("train_rag_jsonl", "datasets/rag_train.jsonl")))
     out_hf_dir = to_absolute_path(str(cfg.outputs.get("hf_dir", "datasets/sft_dataset")))
 
     # Write SFT train/eval chat JSONLs (strip helper field)
-    train_rows = [{"messages": r["messages"]} for r in ds_train.to_list()]
+    train_list = ds_train.to_list()
+    train_rows = [{"messages": r["messages"]} for r in train_list]
     _write_jsonl(out_train, train_rows)
+    # Also write RAG train JSONL (finding_text/result_text) from the same train split
+    train_rag_rows: List[Dict] = []
+    for r in train_list:
+        idx = int(r.get("orig_index", -1))
+        if 0 <= idx < len(source_rows):
+            src = source_rows[idx]
+            train_rag_rows.append({
+                "organ": organ_by_idx[idx],
+                "finding_text": src.get("finding_text", ""),
+                "result_text": src.get("result_text", ""),
+                "modality": src.get("modality", ""),
+            })
+    _write_jsonl(out_train_rag, train_rag_rows)
     if ds_eval is not None and len(ds_eval) > 0:
         eval_list = ds_eval.to_list()
         eval_rows = [{"messages": r["messages"]} for r in eval_list]

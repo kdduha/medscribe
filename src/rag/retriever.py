@@ -59,9 +59,16 @@ class FaissRetriever:
                 if not line:
                     continue
                 obj = json.loads(line)
-                fnd = str(obj.get(finding_key, "")).strip()
-                res = str(obj.get(result_key, "")).strip()
-                if fnd and res:
+                fnd_raw = obj.get(finding_key) or obj.get("finding")
+                res_raw = obj.get(result_key) or obj.get("result")
+                
+                if fnd_raw is None or res_raw is None:
+                    continue
+                
+                fnd = str(fnd_raw).strip()
+                res = str(res_raw).strip()
+                
+                if fnd and res and fnd.lower() != "none" and res.lower() != "none":
                     findings.append(fnd)
                     results.append(res)
 
