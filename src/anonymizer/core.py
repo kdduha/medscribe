@@ -55,6 +55,10 @@ class Anonymizer:
         text = self._read_docx(in_path)
         return self._process_text_and_write(text, out_txt_path, anonymize_before_write)
 
+    def process_doc(self, in_path: str, out_txt_path: str, anonymize_before_write: bool = True) -> AnonymizationResult:
+        text = self._read_doc(in_path)
+        return self._process_text_and_write(text, out_txt_path, anonymize_before_write)
+
     def process_pdf(self, in_path: str, out_txt_path: str, anonymize_before_write: bool = True) -> AnonymizationResult:
         text = self._read_pdf(in_path)
         return self._process_text_and_write(text, out_txt_path, anonymize_before_write)
@@ -94,6 +98,25 @@ class Anonymizer:
 
         doc = docx.Document(path)
         return "\n".join(p.text for p in doc.paragraphs)
+
+    @staticmethod
+    def _read_doc(path: str) -> str:
+        try:
+            # antiword: https://www.winfield.demon.nl/
+            # install with brew install antiword
+            result = subprocess.run(
+                ["antiword", "-m", "UTF-8.txt", path],
+                capture_output=True,
+                text=True,
+                check=True
+            )
+            text = result.stdout
+            return text
+
+        except subprocess.CalledProcessError as exc:
+            LOG.exception("Failed to convert DOC via antiword: %s", exc)
+        except Exception as exc:
+            LOG.exception("Unexpected error reading DOC %s: %s", path, exc)
 
     @staticmethod
     def _read_pdf(path: str) -> str:

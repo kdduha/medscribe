@@ -130,7 +130,7 @@ class OpenAIEngine(BaseEngine):
         return result
 
     @staticmethod
-    def _chunk_text(text: str, size: int = 500) -> list[str]:
+    def _chunk_text(text: str, size: int = 750) -> list[str]:
         return [text[i:i + size] for i in range(0, len(text), size)]
 
     def _anonymize_chunk(self, chunk: str) -> AnonymizationResult:
@@ -157,17 +157,6 @@ class OpenAIEngine(BaseEngine):
     def _build_prompt(chunk: str) -> str:
         few_shot_examples = """
     Пример 1:
-    Текст: "Пациент Иванов Иван Иванович пришел на обследование 22.04.2015"
-    Ответ JSON:
-    {
-      "text": "Пациент [NAME] пришел на обследование [DATE]",
-      "spans": [
-        {"start": 8, "end": 27, "label": "NAME", "text": "Иванов Иван Иванович"},
-        {"start": 45, "end": 55, "label": "DATE", "text": "22.04.2015"}
-      ]
-    }
-
-    Пример 2:
     Текст: "Ф.И.О.      Кузовенкова Н.Н.\nДата рождения  1979 Москва  исследования   Органы грудной клетки"
     Ответ JSON:
     {
@@ -179,7 +168,7 @@ class OpenAIEngine(BaseEngine):
       ]
     }
 
-    Пример 3:
+    Пример 2:
     Текст: "20 июня 2007 Москва: ________Попов П.А."
     Ответ JSON:
     {
