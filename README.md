@@ -4,34 +4,7 @@
 
 ## 0. Пайплайн
 
-```text
-            СЫРЫЕ ДАННЫЕ (CSV/Excel)
-                       │
-                       ▼
-          Анонимизация + подготовка к SFT/RAG
-                       │
-        ┌──────────────┴──────────────┐
-        │                             │
-        ▼                             ▼
-  ПОДГОТОВКА К SFT              ПОДГОТОВКА RAG
-        │                             │
-        ▼                             ▼
-  ОБУЧЕНИЕ (SFT)                 FAISS-ИНДЕКС
-  ├─ локально                         │
-  └─ Together.ai                      │
-        │                             │
-        └──────────────┬──────────────┘
-                       ▼
-                  vLLM server
-                       │
-                       ▼
-          RAG ИНФЕРЕНС / ВАЛИДАЦИЯ
-          ├─ онлайн/батч
-          └─ оффлайн eval
-                       │
-                       ▼
-            CSV + JSON-логи + метрики
-```
+![image](./media/pipeline.png)
 
 ## 1. Установка окружения
 - Python 3.10+
@@ -39,13 +12,30 @@
 - Переменные окружения для LLM:
   - `OPENAI_API_KEY` и (опционально) `OPENAI_BASE_URL` — для OpenAI-совместимых API или локального vLLM.
   - `TOGETHER_API_KEY` — для Together.ai fine-tuning.
+- Для сборки полноценного датасета с нуля из сырых данных нужен Golang
 
 ## 2. Подготовка данных
+
+### 2.0 Сбор датасета из сырых данных
+
+1. Через аномайзер запускаем обработку сырых данных
+  ```shell
+  python -m scripts.anonymize datasets/raw-data datasets/anon-data
+  ```
+1. Для сборки конечного E2E датасета input-output формата запускаем Golang скрипт (более подробная [инструкция](go/README.md))
+  ```sh
+  go run go/cmd/main.go
+  ```
+  или запустите нужный [binary файл](go/bin), исходя из вашей архитектуры, например:
+  ```sh
+  source go/bin/cmd-darwin-arm64
+  ```
+
 Высокоуровневая схема:
 1. (Опционально) Скачиваем `processed_result(s).csv` с Google Drive.
-2. Объединяем найденные CSV в один `datasets/raw_compiled.csv`.
-3. Генерируем промпты и таргеты для SFT/RAG.
-4. Преобразуем JSONL в чат-формат и делим на train/eval/test.
+1. Объединяем найденные CSV в один `datasets/raw_compiled.csv`.
+1. Генерируем промпты и таргеты для SFT/RAG.
+1. Преобразуем JSONL в чат-формат и делим на train/eval/test.
 
 Все шаги управляются Hydra-конфигом `configs/prepare_data.yaml`.
 
